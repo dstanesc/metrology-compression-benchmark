@@ -77,3 +77,5 @@ The fastest option is Lz4js
 ```
 
 ![2700 Measurements Report](./2700m.png)
+
+![900 Measurements Report](./900m.png)
