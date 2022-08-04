@@ -27,7 +27,7 @@ const metrologyPartReportData = (args) => {
   return { buf, bufSize }
 }
 
-const bench = ({ buf, bufSize }, options) => {
+const bench = (full, { buf, bufSize }, options) => {
   const serPako = pako.deflate(buf, options.pako);
   const serLz4 = lz4.compress(buf);
   const serBrotli = brotli.compress(buf, options.brotli);
@@ -40,9 +40,10 @@ const bench = ({ buf, bufSize }, options) => {
   const pakoRate = rate(bufSize, serPakoSize);
   const lz4jsRate = rate(bufSize, serLz4Size);
 
-  console.log(`Metrology report size ${miB(bufSize)} MiB, brotli ${JSON.stringify(options.brotli)} compressed size ${miB(serBrotliSize)} MiB, compression rate ${brotliRate} %`);
-  console.log(`Metrology report size ${miB(bufSize)} MiB, pako ${JSON.stringify(options.pako)} compressed size ${miB(serPakoSize)} MiB, compression rate ${pakoRate} %`);
-  console.log(`Metrology report size ${miB(bufSize)} MiB, lz4 (default) compressed size ${miB(serLz4Size)} MiB, compression rate ${lz4jsRate} %`);
+  const subj = full ? "Compression and decompression combined" : "Compression only";
+  console.log(`${subj}, report size ${miB(bufSize)} MiB, brotli ${JSON.stringify(options.brotli)} compressed size ${miB(serBrotliSize)} MiB, compression rate ${brotliRate} %`);
+  console.log(`${subj}, report size ${miB(bufSize)} MiB, pako ${JSON.stringify(options.pako)} compressed size ${miB(serPakoSize)} MiB, compression rate ${pakoRate} %`);
+  console.log(`${subj}, report size ${miB(bufSize)} MiB, lz4 (default) compressed size ${miB(serLz4Size)} MiB, compression rate ${lz4jsRate} %`);
 
   const compressSuite = new Benchmark.Suite('MMetrology Compression Suite')
 
@@ -75,45 +76,71 @@ const bench = ({ buf, bufSize }, options) => {
 
   compressSuite
     .add('Brotli', async () => {
-      brotli.compress(buf, options.brotli);
+      const ser = brotli.compress(buf, options.brotli);
+      if (full) {
+        brotli.decompress(ser);
+      }
     })
     .add('Pako', async () => {
-      pako.deflate(buf, options.pako);
+      const ser = pako.deflate(buf, options.pako);
+      if (full) {
+        pako.inflate(ser);
+      }
     })
     .add('Lz4js', async () => {
-      lz4.compress(buf);
+      const ser = lz4.compress(buf);
+      if (full) {
+        lz4.decompress(ser);
+      }
     })
     .run()
 
   return { bufSize: bufSize, ops: { brotli: brotliHz, pako: pakoHz, lz4js: lz4jsHz }, rate: { brotli: brotliRate, pako: pakoRate, lz4js: lz4jsRate }, options: { brotli: options.brotli.quality, pako: options.pako.level } }
 }
 
-const rep100 = metrologyPartReportData({reportSize: 100}); // 100 measurements 
-const rep300 = metrologyPartReportData({reportSize: 300}); // 300 measurements 
-const rep900 = metrologyPartReportData({reportSize: 900}); // 900 measurements 
-const rep2700 = metrologyPartReportData({reportSize: 2700}); // 2700 measurements 
+const rep100 = metrologyPartReportData({ reportSize: 100 }); // 100 measurements 
+const rep300 = metrologyPartReportData({ reportSize: 300 }); // 300 measurements 
+const rep900 = metrologyPartReportData({ reportSize: 900 }); // 900 measurements 
+const rep2700 = metrologyPartReportData({ reportSize: 2700 }); // 2700 measurements 
 
 console.log()
 
-const qualityBench = (metrologyData) => {
-  const min = bench(metrologyData, { brotli: { quality: 1 }, pako: { level: 1 } });  // min compression
-  const med = bench(metrologyData, { brotli: { quality: 5 }, pako: { level: 5 } });  // medium compression
-  const max = bench(metrologyData, { brotli: { quality: 11 }, pako: { level: 9 } }); // max compression
+const qualityBench = (full, metrologyData) => {
+  const min = bench(full, metrologyData, { brotli: { quality: 1 }, pako: { level: 1 } });  // min compression
+  const med = bench(full, metrologyData, { brotli: { quality: 5 }, pako: { level: 5 } });  // medium compression
+  const max = bench(full, metrologyData, { brotli: { quality: 11 }, pako: { level: 9 } }); // max compression
   return { min, med, max }
 }
 
-const res100 = qualityBench(rep100);
+let res100 = qualityBench(false, rep100);
 
 console.log(res100)
 
-const res300 = qualityBench(rep300);
+let res300 = qualityBench(false, rep300);
 
 console.log(res300)
 
-const res900 = qualityBench(rep900);
+let res900 = qualityBench(false, rep900);
 
 console.log(res900)
 
-const res2700 = qualityBench(rep2700);
+let res2700 = qualityBench(false, rep2700);
+
+console.log(res2700)
+
+
+res100 = qualityBench(true, rep100);
+
+console.log(res100)
+
+res300 = qualityBench(true, rep300);
+
+console.log(res300)
+
+res900 = qualityBench(true, rep900);
+
+console.log(res900)
+
+res2700 = qualityBench(true, rep2700);
 
 console.log(res2700)
