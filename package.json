@@ -13,7 +13,7 @@
     "pako": "^2.0.4"
   },
   "scripts": {
-    "clean": "rimraf node_modules",
+    "clean": "rimraf node_modules build",
     "start": "node ./benchmark.js"
   },
   "devDependencies": {

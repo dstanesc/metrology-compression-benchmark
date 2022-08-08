@@ -11,6 +11,8 @@ import * as lz4 from 'lz4js'
 import * as pako from 'pako'
 import * as brotli from 'brotli'
 
+import { plot } from './plot.js';
+
 const rate = (origSize, deflatedSize) => {
   return (((origSize - deflatedSize) / origSize) * 100).toFixed(2);
 }
@@ -95,7 +97,7 @@ const bench = (full, { buf, bufSize }, options) => {
     })
     .run()
 
-  return { bufSize: bufSize, ops: { brotli: brotliHz, pako: pakoHz, lz4js: lz4jsHz }, rate: { brotli: brotliRate, pako: pakoRate, lz4js: lz4jsRate }, options: { brotli: options.brotli.quality, pako: options.pako.level } }
+  return { initial: miB(bufSize), compressed: { brotli: miB(serBrotliSize), pako: miB(serPakoSize), lz4js: miB(serLz4Size) }, ops: { brotli: brotliHz, pako: pakoHz, lz4js: lz4jsHz }, rate: { brotli: brotliRate, pako: pakoRate, lz4js: lz4jsRate }, options: { brotli: options.brotli.quality, pako: options.pako.level } }
 }
 
 const rep100 = metrologyPartReportData({ reportSize: 100 }); // 100 measurements 
@@ -114,33 +116,33 @@ const qualityBench = (full, metrologyData) => {
 
 let res100 = qualityBench(false, rep100);
 
-console.log(res100)
+plot('', res100)
 
 let res300 = qualityBench(false, rep300);
 
-console.log(res300)
+plot('', res300)
 
 let res900 = qualityBench(false, rep900);
 
-console.log(res900)
+plot('', res900)
 
 let res2700 = qualityBench(false, rep2700);
 
-console.log(res2700)
+plot('', res2700)
 
 
 res100 = qualityBench(true, rep100);
 
-console.log(res100)
+plot('-Decompression', res100)
 
 res300 = qualityBench(true, rep300);
 
-console.log(res300)
+plot('-Decompression', res300)
 
 res900 = qualityBench(true, rep900);
 
-console.log(res900)
+plot('-Decompression', res900)
 
 res2700 = qualityBench(true, rep2700);
 
-console.log(res2700)
+plot('-Decompression', res2700)
