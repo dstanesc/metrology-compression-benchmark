@@ -117,8 +117,8 @@ function plotSection(prefix, suffix, partialResult) {
 
 export function plot(suffix, benchResult) {
     plotSection(`Minimum`, suffix, benchResult.min);
-    plotSection(`Medium`, suffix, benchResult.min);
-    plotSection(`Maximum`, suffix, benchResult.min);
+    plotSection(`Medium`, suffix, benchResult.med);
+    plotSection(`Maximum`, suffix, benchResult.max);
 }
 
 export function toFile(fileName, content) {
