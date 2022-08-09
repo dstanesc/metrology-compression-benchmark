@@ -55,23 +55,23 @@ The fastest option is Lz4js
 
 Metrology report 100 measurements, original size 0.44 MiB
 
-![](./img/044-medc.png)
-![](./img/044-medcd.png)
+![](./img/044-medc-rate.png)
+![](./img/044-medcd-rate.png)
 
-Metrology report 300 measurements, original size 1.32 MiB
+Metrology report 300 measurements, original size 1.33 MiB
 
-![](./img/132-medc.png)
-![](./img/132-medcd.png)
+![](./img/133-medc-rate.png)
+![](./img/133-medcd-rate.png)
 
-Metrology report 900 measurements, original size 3.97 MiB
+Metrology report 900 measurements, original size 3.98 MiB
 
-![](./img/397-medc.png)
-![](./img/397-medcd.png)
+![](./img/398-medc-rate.png)
+![](./img/398-medcd-rate.png)
 
-Metrology report 2700 measurements, original size 11.92 MiB
+Metrology report 2700 measurements, original size 11.93 MiB
 
-![](./img/1192-medc.png)
-![](./img/1192-medcd.png)
+![](./img/1193-medc-rate.png)
+![](./img/1193-medcd-rate.png)
 
 
 
