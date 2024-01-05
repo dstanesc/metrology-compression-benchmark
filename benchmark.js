@@ -10,6 +10,7 @@ import { pack } from 'msgpackr';
 import * as lz4 from 'lz4js'
 import * as pako from 'pako'
 import * as brotli from 'brotli'
+import * as snappy from 'snappy'
 
 import { plot } from './plot.js';
 
@@ -31,21 +32,25 @@ const metrologyPartReportData = (args) => {
 
 const bench = (full, { buf, bufSize }, options) => {
   const serPako = pako.deflate(buf, options.pako);
+  const serSnappy = snappy.compressSync(buf);
   const serLz4 = lz4.compress(buf);
   const serBrotli = brotli.compress(buf, options.brotli);
 
   const serPakoSize = serPako.byteLength;
+  const serSnappySize = serSnappy.byteLength;
   const serLz4Size = serLz4.byteLength;
   const serBrotliSize = serBrotli.byteLength;
 
   const brotliRate = rate(bufSize, serBrotliSize);
   const pakoRate = rate(bufSize, serPakoSize);
   const lz4jsRate = rate(bufSize, serLz4Size);
+  const snappyRate = rate(bufSize, serSnappySize);
 
   const subj = full ? "Compression and decompression combined" : "Compression only";
   console.log(`${subj}, report size ${miB(bufSize)} MiB, brotli ${JSON.stringify(options.brotli)} compressed size ${miB(serBrotliSize)} MiB, compression rate ${brotliRate} %`);
   console.log(`${subj}, report size ${miB(bufSize)} MiB, pako ${JSON.stringify(options.pako)} compressed size ${miB(serPakoSize)} MiB, compression rate ${pakoRate} %`);
   console.log(`${subj}, report size ${miB(bufSize)} MiB, lz4 (default) compressed size ${miB(serLz4Size)} MiB, compression rate ${lz4jsRate} %`);
+  console.log(`${subj}, report size ${miB(bufSize)} MiB, snappy (default) compressed size ${miB(serSnappySize)} MiB, compression rate ${snappyRate} %`);
 
   const compressSuite = new Benchmark.Suite('MMetrology Compression Suite')
 
@@ -59,6 +64,7 @@ const bench = (full, { buf, bufSize }, options) => {
   let brotliHz;
   let pakoHz;
   let lz4jsHz;
+  let snappyHz;
 
   compressSuite.on('cycle', event => {
     const benchmark = event.target;
@@ -72,6 +78,9 @@ const bench = (full, { buf, bufSize }, options) => {
         break;
       case 'Lz4js':
         lz4jsHz = Math.floor(benchmark.hz);
+        break;
+      case 'Snappy':
+        snappyHz = Math.floor(benchmark.hz);
         break;
     }
   });
@@ -95,11 +104,18 @@ const bench = (full, { buf, bufSize }, options) => {
         lz4.decompress(ser);
       }
     })
+    .add('Snappy', async () => {
+      const ser = snappy.compressSync(buf);
+      if (full) {
+        snappy.uncompressSync(ser);
+      }
+    })
     .run()
 
   return { initial: miB(bufSize), compressed: { brotli: miB(serBrotliSize), pako: miB(serPakoSize), lz4js: miB(serLz4Size) }, ops: { brotli: brotliHz, pako: pakoHz, lz4js: lz4jsHz }, rate: { brotli: brotliRate, pako: pakoRate, lz4js: lz4jsRate }, options: { brotli: options.brotli.quality, pako: options.pako.level } }
 }
 
+const rep10 = metrologyPartReportData({ reportSize: 10 }); // 10 measurements 
 const rep100 = metrologyPartReportData({ reportSize: 100 }); // 100 measurements 
 const rep300 = metrologyPartReportData({ reportSize: 300 }); // 300 measurements 
 const rep900 = metrologyPartReportData({ reportSize: 900 }); // 900 measurements 
@@ -113,6 +129,11 @@ const qualityBench = (full, metrologyData) => {
   const max = bench(full, metrologyData, { brotli: { quality: 11 }, pako: { level: 9 } }); // max compression
   return { min, med, max }
 }
+
+
+let res10 = qualityBench(false, rep10);
+
+plot('', res10)
 
 let res100 = qualityBench(false, rep100);
 
@@ -130,6 +151,9 @@ let res2700 = qualityBench(false, rep2700);
 
 plot('', res2700)
 
+res10 = qualityBench(true, rep10);
+
+plot('-Decompression', res10)
 
 res100 = qualityBench(true, rep100);
 
